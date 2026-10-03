@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A question for you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300;1,9..144,500&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#1a1838; --deep:#0f0e24; --blush:#ffd9d2; --rose:#e8476b; --gold:#f4c871;
+    --serif:'Fraunces',Georgia,serif; --sans:'Manrope',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);color:var(--blush);overflow:hidden;
+    background:radial-gradient(ellipse at 50% 120%,#4a2350 0%,var(--night) 45%,var(--deep) 100%);
+  }
+  canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  main{position:relative;height:100%;display:grid;place-items:center;padding:24px;text-align:center}
+  .scene{position:absolute;max-width:640px;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .9s ease,transform .9s ease}
+  .scene.on{opacity:1;transform:none;pointer-events:auto}
+  h1,h2{font-family:var(--serif);font-weight:300;line-height:1.15}
+  h1{font-size:clamp(2.4rem,8vw,4.6rem)}
+  h2{font-size:clamp(1.7rem,5.5vw,3rem);font-style:italic}
+  h1 em{font-style:italic;font-weight:500;color:var(--gold)}
+  p.sub{margin-top:18px;font-size:1.05rem;line-height:1.7;opacity:.8}
+  .btn{
+    margin-top:34px;font:600 1rem var(--sans);color:var(--deep);background:var(--blush);
+    border:0;border-radius:999px;padding:14px 34px;cursor:pointer;
+    transition:transform .2s,background .2s,box-shadow .2s;
+  }
+  .btn:hover{transform:scale(1.05);box-shadow:0 0 30px rgba(255,217,210,.35)}
+  .btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+  .dots{position:fixed;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:10px}
+  .dots i{width:8px;height:8px;border-radius:50%;background:var(--blush);opacity:.25;transition:.4s}
+  .dots i.on{opacity:1;background:var(--gold);transform:scale(1.3)}
+  .memory{font-family:var(--serif);font-style:italic;font-size:clamp(1.5rem,5vw,2.4rem);line-height:1.35}
+  .memory small{display:block;margin-top:16px;font:400 .95rem var(--sans);font-style:normal;opacity:.65}
+  .ring{font-size:4rem;display:inline-block;animation:float 3.2s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-12px) rotate(6deg)}}
+  .answers{margin-top:40px;display:flex;gap:18px;justify-content:center;align-items:center;min-height:70px}
+  #yes{background:var(--rose);color:#fff;font-size:1.1rem;padding:16px 42px}
+  #yes:hover{box-shadow:0 0 36px rgba(232,71,107,.6)}
+  #no{background:transparent;color:var(--blush);border:1px solid rgba(255,217,210,.4);margin-top:0;padding:12px 26px;transition:left .25s,top .25s,transform .2s}
+  #yes{margin-top:0}
+  .hint{margin-top:22px;font-size:.9rem;opacity:.55;min-height:1.4em}
+  @media (prefers-reduced-motion:reduce){.scene{transition:none}.ring{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<main>
+  <section class="scene on" id="s0">
+    <h1>Hey, <em>Mimuuu</em>.</h1>
+    <p class="sub">I made you something. It only takes a minute.</p>
+    <button class="btn" data-next>Open it</button>
+  </section>
+
+  <section class="scene" id="s1">
+    <p class="memory">“The day I met you, I had no idea my whole life was about to change.”<small>And it did, in the best way.</small></p>
+    <button class="btn" data-next>Keep going</button>
+  </section>
+
+  <section class="scene" id="s2">
+    <p class="memory">“You make ordinary days feel like the best ones.”<small>Every day with you counts.</small></p>
+    <button class="btn" data-next>Keep going</button>
+  </section>
+
+  <section class="scene" id="s3">
+    <p class="memory">“I can’t picture a future that doesn’t have you laughing next to me.”<small>I don’t want to.</small></p>
+    <button class="btn" data-next>One more thing</button>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="ring" aria-hidden="true">💍</div>
+    <h2>Mimuuu, will you marry me?</h2>
+    <div class="answers">
+      <button class="btn" id="yes">Yes</button>
+      <button class="btn" id="no">No</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </section>
+
+  <section class="scene" id="s5">
+    <h1>She said <em>yes.</em></h1>
+    <p class="sub">I love you. Forever starts now.</p>
+  </section>
+</main>
+
+<div class="dots" id="dots"></div>
+
+<script>
+
+const $ = s => document.querySelector(s);
+
+/* Scenes */
+const scenes = [...document.querySelectorAll('.scene')];
+const dots = $('#dots');
+for(let i=0;i<5;i++) dots.appendChild(document.createElement('i'));
+let cur = 0;
+function go(n){
+  scenes[cur].classList.remove('on');
+  cur = n;
+  scenes[cur].classList.add('on');
+  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===Math.min(cur,4)));
+  if(cur===5) dots.style.display='none';
+  burst(innerWidth/2, innerHeight/2, 8, false);
+}
+document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>go(cur+1)));
+dots.children[0].classList.add('on');
+
+/* Background: floating hearts + stars */
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let W,H,dpr; const parts = [];
+function size(){ dpr=devicePixelRatio||1; W=cv.width=innerWidth*dpr; H=cv.height=innerHeight*dpr; }
+addEventListener('resize',size); size();
+const colors = ['#e8476b','#ffd9d2','#f4c871','#ff8fa3'];
+function heart(x,y,s,c,a,r){
+  ctx.save();ctx.translate(x,y);ctx.rotate(r);ctx.globalAlpha=a;ctx.fillStyle=c;ctx.scale(s,s);
+  ctx.beginPath();ctx.moveTo(0,.35);
+  ctx.bezierCurveTo(-1,-.35,-.5,-1,0,-.45);
+  ctx.bezierCurveTo(.5,-1,1,-.35,0,.35);
+  ctx.fill();ctx.restore();
+}
+for(let i=0;i<28;i++) parts.push({amb:true,x:Math.random()*W,y:Math.random()*H,s:(6+Math.random()*14)*dpr,vy:-(.15+Math.random()*.4)*dpr,c:colors[i%4],a:.1+Math.random()*.25,r:Math.random()-.5,ph:Math.random()*6});
+function burst(x,y,n,big){
+  for(let i=0;i<n;i++){
+    const ang=Math.random()*Math.PI*2, sp=(big?4+Math.random()*9:2+Math.random()*3)*dpr;
+    parts.push({x:x*dpr,y:y*dpr,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-(big?5*dpr:1),g:.12*dpr,s:(big?8+Math.random()*14:6+Math.random()*6)*dpr,c:colors[i%4],a:1,r:Math.random()*6,life:big?200:80});
+  }
+}
+(function loop(t){
+  ctx.clearRect(0,0,W,H);
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    if(p.amb){
+      p.y+=p.vy; p.x+=Math.sin(t/1800+p.ph)*.3*dpr;
+      if(p.y<-30*dpr){p.y=H+30*dpr;p.x=Math.random()*W}
+    }else{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.vx*=.99; p.life--; p.a=Math.min(1,p.life/40);
+      if(p.life<=0){parts.splice(i,1);continue}
+    }
+    heart(p.x,p.y,p.s,p.c,p.a,p.r+(p.amb?0:p.life/20));
+  }
+  requestAnimationFrame(loop);
+})(0);
+
+/* The question: "No" runs away, "Yes" keeps growing */
+const no = $('#no'), yes = $('#yes'), hint = $('#hint');
+const taunts = ["Nice try.","Are you sure?","It's getting away from you…","Almost had it!","Just say yes 🥺","The button is shy.","Come on…"];
+let dodges = 0, scale = 1;
+function dodge(e){
+  if(e) e.preventDefault();
+  dodges++;
+  no.style.position='fixed';
+  const pad=20, w=no.offsetWidth, h=no.offsetHeight;
+  no.style.left = pad + Math.random()*(innerWidth-w-pad*2) + 'px';
+  no.style.top  = pad + Math.random()*(innerHeight-h-pad*2) + 'px';
+  scale = Math.min(scale+.18, 3);
+  yes.style.transform = `scale(${scale})`;
+  hint.textContent = taunts[Math.min(dodges-1,taunts.length-1)];
+  if(dodges>=5){ no.textContent='Yes (fine)'; no.onclick=sayYes; no.removeEventListener('mouseenter',dodge); no.removeEventListener('touchstart',dodge); }
+}
+no.addEventListener('mouseenter',dodge);
+no.addEventListener('touchstart',dodge,{passive:false});
+no.addEventListener('click',dodge);
+
+/* Yes! */
+function sayYes(){
+  no.style.display='none';
+  go(5);
+  let n=0;
+  const id=setInterval(()=>{
+    burst(Math.random()*innerWidth, innerHeight*(.2+Math.random()*.4), 40, true);
+    if(++n>8) clearInterval(id);
+  },350);
+}
+yes.addEventListener('click',sayYes);
+</script>
+</body>
+</html>
